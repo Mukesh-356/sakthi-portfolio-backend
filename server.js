@@ -7,8 +7,20 @@ dotenv.config();
 
 const app = express();
 
-// Basic CORS - Allow all for now
-app.use(cors());
+// Updated CORS with your frontend URL
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000', 
+    'https://sakthi-portfolio-frontend.vercel.app',
+    'https://sakthipotfolio.com',
+    'https://www.sakthipotfolio.com'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 
 // Simple test routes only
@@ -32,7 +44,7 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Test API Working!' });
 });
 
-// MongoDB Connection only - NO OTHER IMPORTS
+// MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -40,9 +52,9 @@ mongoose.connect(process.env.MONGODB_URI, {
 .then(() => console.log('✅ MongoDB Connected'))
 .catch(err => console.log('❌ MongoDB Error:', err.message));
 
-// No error handlers that might interfere
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`✅ Server started successfully`);
+  console.log(`🌐 Frontend: https://sakthi-portfolio-frontend.vercel.app`);
 });
