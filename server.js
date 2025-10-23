@@ -39,6 +39,20 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// server.js la add pannu
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Portfolio Backend is Running!',
+    status: 'OK',
+    database: 'MongoDB Connected',
+    timestamp: new Date()
+  });
+});
+
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'Test API Working!' });
+});
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/portfolio')
   .then(() => console.log('✅ MongoDB Connected'))
