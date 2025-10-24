@@ -3,15 +3,15 @@ import nodemailer from 'nodemailer';
 
 const router = express.Router();
 
-// CORS middleware for this route
-router.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  next();
-});
+// ✅ REMOVE CORS MIDDLEWARE - Already handled in server.js
+// router.use((req, res, next) => {
+//   res.header('Access-Control-Allow-Origin', '*');
+//   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+//   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+//   next();
+// });
 
-// ✅ ADD THIS TEST ENDPOINT
+// ✅ TEST ENDPOINT - FIXED
 router.get('/test', (req, res) => {
   console.log('✅ Contact test route hit');
   res.json({ 
@@ -22,7 +22,7 @@ router.get('/test', (req, res) => {
   });
 });
 
-// ✅ ADD EMAIL TEST ENDPOINT
+// ✅ EMAIL TEST ENDPOINT - FIXED
 router.get('/test-email', async (req, res) => {
   try {
     console.log('📧 Testing email configuration...');
@@ -35,7 +35,7 @@ router.get('/test-email', async (req, res) => {
     }
 
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: process.env.EMAIL_SERVICE || 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -61,24 +61,31 @@ router.get('/test-email', async (req, res) => {
   }
 });
 
-// Main contact form submission
+// ✅ MAIN CONTACT FORM - FIXED
 router.post('/', async (req, res) => {
   try {
-    const { name, email, message } = req.body;
+    const { name, email, message, projectDetails } = req.body;
 
-    console.log('📧 Contact form submission received:', { name, email, message: message?.substring(0, 50) + '...' });
+    console.log('📧 Contact form submission received:', { 
+      name, 
+      email, 
+      message: message?.substring(0, 50) + '...',
+      projectDetails: projectDetails?.substring(0, 50) + '...'
+    });
 
-    // Validate required fields
+    // ✅ VALIDATION - FIXED
     if (!name || !email || !message) {
+      console.log('❌ Validation failed - missing fields');
       return res.status(400).json({ 
         success: false,
-        message: 'All fields are required' 
+        message: 'Name, email, and message are required fields' 
       });
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      console.log('❌ Validation failed - invalid email:', email);
       return res.status(400).json({
         success: false,
         message: 'Please provide a valid email address'
@@ -87,12 +94,12 @@ router.post('/', async (req, res) => {
 
     console.log('🔄 Creating email transport...');
     
-    // Enhanced email transporter with better configuration
+    // ✅ EMAIL TRANSPORTER - FIXED
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: process.env.EMAIL_SERVICE || 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS // Use App Password, not regular password
+        pass: process.env.EMAIL_PASS
       },
       secure: true,
       tls: {
@@ -104,93 +111,75 @@ router.post('/', async (req, res) => {
     await transporter.verify();
     console.log('✅ Email transporter verified');
 
-    // Email to portfolio owner (you)
+    // ✅ EMAIL TO PORTFOLIO OWNER - FIXED
     const ownerMailOptions = {
-      from: `"Portfolio Contact" <${process.env.EMAIL_USER}>`,
-      to: process.env.CONTACT_EMAIL || process.env.EMAIL_USER,
+      from: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER, // Send to yourself
       replyTo: email,
       subject: `🎨 New Portfolio Message - ${name}`,
       html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; color: white; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px; }
-                .info-box { background: white; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #3b82f6; }
-                .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 14px; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1>New Contact Form Submission</h1>
-                <p>From your 3D Portfolio Website</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; color: white; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1>New Contact Form Submission</h1>
+            <p>From your 3D Portfolio Website</p>
+          </div>
+          <div style="background: #f8fafc; padding: 30px; border-radius: 0 0 10px 10px;">
+            <div style="background: white; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #3b82f6;">
+              <h3>👤 Contact Information</h3>
+              <p><strong>Name:</strong> ${name}</p>
+              <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+              <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
             </div>
-            <div class="content">
-                <div class="info-box">
-                    <h3>👤 Contact Information</h3>
-                    <p><strong>Name:</strong> ${name}</p>
-                    <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
-                    <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
-                </div>
-                <div class="info-box">
-                    <h3>💬 Message</h3>
-                    <p>${message.replace(/\n/g, '<br>')}</p>
-                </div>
+            ${projectDetails ? `
+            <div style="background: white; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #f59e0b;">
+              <h3>📋 Project Details</h3>
+              <p>${projectDetails.replace(/\n/g, '<br>')}</p>
             </div>
-            <div class="footer">
-                <p>This message was sent from your portfolio contact form</p>
+            ` : ''}
+            <div style="background: white; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #10b981;">
+              <h3>💬 Message</h3>
+              <p>${message.replace(/\n/g, '<br>')}</p>
             </div>
-        </body>
-        </html>
+          </div>
+          <div style="text-align: center; margin-top: 20px; color: #6b7280; font-size: 14px;">
+            <p>This message was sent from your portfolio contact form</p>
+          </div>
+        </div>
       `
     };
 
-    // Confirmation email to the user
+    // ✅ CONFIRMATION EMAIL TO USER - FIXED
     const userMailOptions = {
-      from: `"3D Portfolio" <${process.env.EMAIL_USER}>`,
+      from: process.env.EMAIL_USER,
       to: email,
       subject: '✅ Message Received - 3D Portfolio',
       html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; color: white; text-align: center; border-radius: 10px 10px 0 0; }
-                .content { background: #f0fdf4; padding: 30px; border-radius: 0 0 10px 10px; }
-                .info-box { background: white; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #10b981; }
-                .footer { text-align: center; margin-top: 20px; color: #6b7280; font-size: 14px; }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1>Thank You for Reaching Out! 🎨</h1>
-                <p>Your message has been received</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; color: white; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1>Thank You for Reaching Out! 🎨</h1>
+            <p>Your message has been received</p>
+          </div>
+          <div style="background: #f0fdf4; padding: 30px; border-radius: 0 0 10px 10px;">
+            <div style="background: white; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #10b981;">
+              <h3>Hello ${name},</h3>
+              <p>Thank you for contacting me through my 3D portfolio website. I have received your message and will review it shortly.</p>
+              <p><strong>What to expect next:</strong></p>
+              <ul>
+                <li>I typically respond within 6-12 hours</li>
+                <li>We'll discuss your project requirements</li>
+                <li>I'll provide a detailed proposal and timeline</li>
+              </ul>
             </div>
-            <div class="content">
-                <div class="info-box">
-                    <h3>Hello ${name},</h3>
-                    <p>Thank you for contacting me through my 3D portfolio website. I have received your message and will review it shortly.</p>
-                    <p><strong>What to expect next:</strong></p>
-                    <ul>
-                        <li>I typically respond within 6-12 hours</li>
-                        <li>We'll discuss your project requirements</li>
-                        <li>I'll provide a detailed proposal and timeline</li>
-                    </ul>
-                </div>
-                <div class="info-box">
-                    <h3>📋 Your Message Summary</h3>
-                    <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
-                    <p><strong>Message Preview:</strong> "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"</p>
-                </div>
+            <div style="background: white; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #3b82f6;">
+              <h3>📋 Your Message Summary</h3>
+              <p><strong>Submitted:</strong> ${new Date().toLocaleString()}</p>
+              <p><strong>Message Preview:</strong> "${message.substring(0, 100)}${message.length > 100 ? '...' : ''}"</p>
             </div>
-            <div class="footer">
-                <p>This is an automated confirmation. Please do not reply to this email.</p>
-            </div>
-        </body>
-        </html>
+          </div>
+          <div style="text-align: center; margin-top: 20px; color: #6b7280; font-size: 14px;">
+            <p>This is an automated confirmation. Please do not reply to this email.</p>
+          </div>
+        </div>
       `
     };
 
@@ -214,24 +203,27 @@ router.post('/', async (req, res) => {
     let errorMessage = 'Failed to send message. Please try again later.';
     
     if (error.code === 'EAUTH') {
-      errorMessage = 'Email configuration error. Please check email settings.';
+      errorMessage = 'Email authentication failed. Please check email configuration.';
     } else if (error.code === 'EENVELOPE') {
       errorMessage = 'Invalid email address. Please check your email.';
+    } else if (error.message.includes('Invalid login')) {
+      errorMessage = 'Email service configuration error. Please check credentials.';
     }
     
     res.status(500).json({ 
       success: false,
-      message: errorMessage 
+      message: errorMessage,
+      debug: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
 
-// Handle preflight requests
-router.options('/', (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'POST');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
-  res.status(200).send();
-});
+// ✅ REMOVE OPTIONS HANDLER - Already handled by CORS in server.js
+// router.options('/', (req, res) => {
+//   res.header('Access-Control-Allow-Origin', '*');
+//   res.header('Access-Control-Allow-Methods', 'POST');
+//   res.header('Access-Control-Allow-Headers', 'Content-Type');
+//   res.status(200).send();
+// });
 
 export default router;
