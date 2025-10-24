@@ -60,6 +60,20 @@ app.get('/api/contact-test', (req, res) => {
   });
 });
 
+
+// In your server.js, add this:
+app.get('/', (req, res) => {
+  res.json({ 
+    status: 'Server is running', 
+    timestamp: new Date().toISOString() 
+  });
+});
+
+// Keep process alive
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM, cleaning up...');
+  setTimeout(() => process.exit(0), 5000);
+});
 // 404 handler
 app.use('*', (req, res) => {
   console.log(`❌ 404 - Route not found: ${req.method} ${req.originalUrl}`);
