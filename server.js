@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import projectRoutes from './routes/projects.js';
-import contactRoutes from './routes/contact.js'; // Make sure this line exists
+import contactRoutes from './routes/contact.js';
 import importRoutes from './routes/import.js';
 import authRoutes from './routes/auth.js';
 
@@ -35,9 +35,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes - MAKE SURE THIS LINE EXISTS
+// Routes
 app.use('/api/projects', projectRoutes);
-app.use('/api/contact', contactRoutes); // ⚠️ THIS IS CRITICAL
+app.use('/api/contact', contactRoutes);
 app.use('/api/import', importRoutes);
 app.use('/api/auth', authRoutes);
 
@@ -60,8 +60,7 @@ app.get('/api/contact-test', (req, res) => {
   });
 });
 
-
-// In your server.js, add this:
+// Root endpoint
 app.get('/', (req, res) => {
   res.json({ 
     status: 'Server is running', 
@@ -69,11 +68,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Keep process alive
-process.on('SIGTERM', () => {
-  console.log('Received SIGTERM, cleaning up...');
-  setTimeout(() => process.exit(0), 5000);
-});
 // 404 handler
 app.use('*', (req, res) => {
   console.log(`❌ 404 - Route not found: ${req.method} ${req.originalUrl}`);
@@ -108,3 +102,27 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('   POST /api/contact');
   console.log('   GET  /api/contact/test');
 });
+
+// 🚨 CRITICAL: KEEP-ALIVE FOR RAILWAY
+console.log('🚀 Server startup complete - Adding keep-alive...');
+
+// Railway idle detection prevent - heartbeat every 25 seconds
+setInterval(() => {
+  console.log('💓 Keep-alive heartbeat:', new Date().toISOString());
+}, 25000);
+
+// Better SIGTERM handling - keep alive longer
+process.on('SIGTERM', () => {
+  console.log('🛑 SIGTERM received - Keeping alive for 30 seconds...');
+  setTimeout(() => {
+    console.log('✅ Graceful shutdown complete');
+    process.exit(0);
+  }, 30000);
+});
+
+// Additional keep-alive: Self-ping every 2 minutes
+setInterval(() => {
+  fetch(`http://localhost:${PORT}/api/health`)
+    .then(() => console.log('🔗 Self-ping successful'))
+    .catch(() => console.log('⚠️ Self-ping failed'));
+}, 120000);
