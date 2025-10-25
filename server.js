@@ -11,7 +11,7 @@ dotenv.config();
 
 const app = express();
 
-// CORS configuration
+// CORS configuration - FIXED
 app.use(cors({
   origin: [
     'http://localhost:3000',
@@ -19,19 +19,26 @@ app.use(cors({
     'http://127.0.0.1:3000', 
     'https://sakthi-portfolio-frontend.vercel.app',
     'https://sakthipotfolio.com',
-    'https://www.sakthipotfolio.com'
+    'https://www.sakthipotfolio.com',
+    'https://sakthi-portfolio-frontend-ikb9jmqx9-mukesh-356s-projects.vercel.app', // ADD THIS
+    'https://*.vercel.app', // ALL VERCEL DOMAINS
+    'https://sakthi-portfolio-frontend-*.vercel.app' // WILDCARD FOR ALL PREVIEW DEPLOYMENTS
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Logging middleware
+// Logging middleware with CORS info
 app.use((req, res, next) => {
   console.log(`📍 ${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.log(`🌐 Origin: ${req.headers.origin}`);
   next();
 });
 
@@ -41,13 +48,14 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/import', importRoutes);
 app.use('/api/auth', authRoutes);
 
-// Health check
+// Health check with CORS headers
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'Server is healthy',
     time: new Date().toISOString(),
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV,
+    cors: 'enabled'
   });
 });
 
@@ -64,7 +72,8 @@ app.get('/api/contact-test', (req, res) => {
 app.get('/', (req, res) => {
   res.json({ 
     status: 'Server is running', 
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString(),
+    cors: 'configured'
   });
 });
 
@@ -96,6 +105,10 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📧 Email: ${process.env.EMAIL_USER}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV}`);
+  console.log('📍 CORS Enabled for:');
+  console.log('   - https://sakthi-portfolio-frontend-ikb9jmqx9-mukesh-356s-projects.vercel.app');
+  console.log('   - https://sakthi-portfolio-frontend.vercel.app');
+  console.log('   - https://*.vercel.app');
   console.log('📍 Available routes:');
   console.log('   GET  /api/health');
   console.log('   GET  /api/contact-test');
