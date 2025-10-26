@@ -22,7 +22,11 @@ app.use(cors({
     'https://www.sakthipotfolio.com',
     'https://sakthi-portfolio-frontend-ikb9jmqx9-mukesh-356s-projects.vercel.app', // ADD THIS
     'https://*.vercel.app', // ALL VERCEL DOMAINS
-    'https://sakthi-portfolio-frontend-*.vercel.app' // WILDCARD FOR ALL PREVIEW DEPLOYMENTS
+    'https://sakthi-portfolio-frontend-*.vercel.app',
+    'https://sakthipotfolio.fun',          // ✅ ADD THIS
+    'https://www.sakthipotfolio.fun',      // ✅ ADD THIS
+    'https://*.sakthipotfolio.fun'
+     // WILDCARD FOR ALL PREVIEW DEPLOYMENTS
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
